@@ -1,0 +1,76 @@
+const express = require("express");
+const bodyParser = require("body-parser");
+const request = require("request");
+const https = require("https");
+
+const app = express();
+
+app.use(express.static("public"));
+app.use(bodyParser.urlencoded({extended: true}));
+
+app.get("/", function(req, res){
+  res.sendFile(__dirname + "/signup.html");
+});
+
+
+// Post request for  the home route
+app.post("/", function(req, res) {
+  const fName = req.body.firstName;
+  const lName = req.body.lastName;
+  const email = req.body.email;
+
+  const data = {
+    members: [
+      {
+        email_address: email,
+        status: "subscribed",
+        merge_fields: {
+          FNAME: fName,
+          LNAME: lName
+        }
+      }
+    ]
+  };
+
+  const jsonData = JSON.stringify(data);
+
+
+  const url = "https://us17.api.mailchimp.com/3.0/lists/833438ce9f";
+  const options = {
+    method: "POST",
+    auth: "aayush1:297bc495cc973d79e3971d029c56281f-us17"
+  }
+
+  const request = https.request(url, options, function(response) {
+    var code = response.statusCode;
+
+    if (code === 200) {
+      res.sendFile(__dirname + "/success.html");
+    }
+    else {
+      res.sendFile(__dirname + "/failure.html");
+    }
+      response.on("data", function(data) {
+        console.log(JSON.parse(data));
+      });
+  });
+
+  request.write(jsonData);
+  request.end();
+});
+
+// Post request for Failure button
+app.post("/failure", function(req, res) {
+  res.redirect("/");
+});
+
+app.listen(process.env.PORT || 3000, function() {
+  console.log("Sever is running on port 3000.");
+});
+
+
+// API Key
+// 297bc495cc973d79e3971d029c56281f-us17
+
+// List Id
+// 833438ce9f
